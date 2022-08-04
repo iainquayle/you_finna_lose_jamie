@@ -14,7 +14,7 @@ pub mod render_engine {
 		queue: wgpu::Queue,
 		surface_config: wgpu::SurfaceConfiguration,
 		render_pipline: wgpu::RenderPipeline,
-
+		vertex_buffer: wgpu::Buffer,
 	}
 
 	#[repr(C)]
@@ -121,6 +121,7 @@ pub mod render_engine {
 				queue: queue,			
 				surface_config: surface_config,			
 				render_pipline: render_pipeline,
+				vertex_buffer: vertex_buffer,
 			}
 		}
 
