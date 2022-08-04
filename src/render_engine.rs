@@ -1,5 +1,6 @@
 pub mod render_engine {
-    use wgpu::include_wgsl;
+    use glam::Vec3;
+    use wgpu::{include_wgsl, util::DeviceExt};
     use winit::window::Window;
 	use pollster::FutureExt; 
 	
@@ -14,6 +15,13 @@ pub mod render_engine {
 		surface_config: wgpu::SurfaceConfiguration,
 		render_pipline: wgpu::RenderPipeline,
 
+	}
+
+	#[repr(C)]
+	#[derive(Clone, Copy, Debug)]
+	struct Vertex {
+		vertex: Vec3,
+		colour: Vec3,
 	}
 
 	impl RenderEngine {
@@ -88,7 +96,23 @@ pub mod render_engine {
 			});
 
 
+//			let vertices = &[
+//				([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]),
+//				([0.0, 1.0, 0.0], [0.0, 1.0, 0.0]),
+//				([1.0, 1.0, 0.0], [0.0, 0.0, 1.0]),
+//			];
+			let vertices = &[
+				Vertex{vertex: Vec3 { x: 1.0, y: 0.0, z: 0.0}, colour: Vec3 { x: 1.0, y: 1.0, z: 1.0 }},
+				Vertex{vertex: Vec3 { x: 0.5, y: 0.5, z: 0.0}, colour: Vec3 { x: 1.0, y: 1.0, z: 1.0 }},
+				Vertex{vertex: Vec3 { x: -0.5, y: 0.5, z: 0.0}, colour: Vec3 { x: 1.0, y: 1.0, z: 1.0 }},
+			];
+			let vertices_bytes = unsafe {std::slice::from_raw_parts(vertices[..].as_ptr() as *const u8, vertices.len() * std::mem::size_of::<Vertex>())};
 
+			let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor{
+				label: Some("vertex buffer"),
+				contents: vertices_bytes,
+				usage: wgpu::BufferUsages::VERTEX,
+			});
 			
 			Self{
 				surface: surface,
@@ -108,7 +132,7 @@ pub mod render_engine {
 				label: Some("encoder"),
 			});
 
-			let render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor{
+			let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor{
 				label: Some("render pass encoding"),
 				color_attachments: &[Some(wgpu::RenderPassColorAttachment{
 					view: &view,
@@ -125,8 +149,11 @@ pub mod render_engine {
 				})],
 				depth_stencil_attachment: None,
 			});
+			render_pass.set_pipeline(&self.render_pipline);
+			render_pass.draw(0..3, 0..1);
+
 			drop(render_pass);
-		
+			
 			self.queue.submit(std::iter::once(encoder.finish()));
 			output.present();
 		}
